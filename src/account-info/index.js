@@ -15,10 +15,27 @@ function AccountInfo(sources) {
     viewType: "sign-in" // sign-in | create-account
   }));
 
+  const clickCreateAccountRequest$ = action.clickCreateAccount.map(
+    signInInformation => ({
+      method: "post",
+      url: "/api/user/new",
+      category: "sign-in",
+      send: signInInformation
+    })
+  );
+
+  const clickSignInRequest$ = action.clickSignIn.map(signInInformation => ({
+    method: "post",
+    url: "/api/user/information",
+    category: "sign-in",
+    send: signInInformation
+  }));
+
   return {
     dom: dom$,
     account: xs.merge(initAccountReducer$, effects.account),
-    http: effects.http
+    state: effects.state,
+    http: xs.merge(clickCreateAccountRequest$, clickSignInRequest$)
   };
 }
 

@@ -50,6 +50,17 @@ export function last(xs) {
   return xs[xs.length - 1];
 }
 
+export function omit(o, keys) {
+  return Object.keys(o)
+    .filter(k => !keys.includes(k))
+    .reduce(
+      (o, k) => ({
+        [k]: o[k]
+      }),
+      {}
+    );
+}
+
 export function tap() {
   const args = Array.from(arguments);
   console.log(args);
@@ -75,6 +86,15 @@ export function cond(...args) {
   return (...xs) => {
     for (const [predicate, resultFn] of args) {
       if (predicate(...xs)) return resultFn(...xs);
+    }
+    throw new Error("case not handled");
+  };
+}
+
+export function which() {
+  return (...xs) => {
+    for (const [predicate, result] of args) {
+      if (predicate(...xs)) return result;
     }
     throw new Error("case not handled");
   };

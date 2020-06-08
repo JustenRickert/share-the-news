@@ -4,7 +4,14 @@ export function getTopics(db) {
   return db
     .collection("topics")
     .find()
-    .toArray();
+    .toArray()
+    .then(topics =>
+      topics.map(t => {
+        t.id = t._id;
+        delete t._id;
+        return t;
+      })
+    );
 }
 
 export function createNewTopic(db, payload) {

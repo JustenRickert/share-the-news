@@ -75,6 +75,7 @@ function renderUserInformation(state) {
 
 export default function view(sources) {
   const switchView = cond(
+    [s => s.user.waiting, () => div("loading...")],
     [s => s.user.information, renderUserInformation],
     [(_, a) => a.viewType === "sign-in", renderSignInForm],
     [(_, a) => a.viewType === "create-account", renderCreateAccountForm]

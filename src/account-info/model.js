@@ -9,28 +9,11 @@ export default function model(action) {
     )
   );
 
-  const clickCreateAccountRequest$ = action.clickCreateAccount.map(
-    signInInformation => ({
-      method: "post",
-      url: "/api/user/new",
-      category: "sign-in",
-      send: signInInformation
-    })
-  );
-
-  const clickSignInRequest$ = action.clickSignIn.map(signInInformation => ({
-    method: "post",
-    url: "/api/user/information",
-    category: "sign-in",
-    send: signInInformation
-  }));
-
   const clickSignInReducer$ = xs
     .merge(action.clickSignIn, action.clickCreateAccount)
     .mapTo(state => set(state, "user.waiting", true));
 
   return {
-    http: xs.merge(clickSignInRequest$, clickCreateAccountRequest$),
     state: xs.merge(clickSignInReducer$),
     account: xs.merge(accountViewTypeReducer$)
   };
