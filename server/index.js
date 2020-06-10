@@ -1,9 +1,10 @@
 import express from "express";
 
 import setup from "./setup";
-import { createNewTopic, getTopics } from "./topics";
+import { addNewTopic, getTopics, addTopicLink } from "./topics";
 import { createNewUser, getUser, getUserById } from "./users";
 import validateUrl from "./validate-url";
+import { assert } from "../utility/index";
 
 const app = express();
 
@@ -40,8 +41,8 @@ setup(app).then(({ mongodb }) => {
       .catch(() => res.status(404).send());
   });
 
-  app.post("/api/create-new-topic", (req, res) => {
-    createNewTopic(mongodb, {
+  app.post("/api/add-new-topic", (req, res) => {
+    addNewTopic(mongodb, {
       ...req.body,
       submittedBy: req.session.userId
     }).then(({ insertedId }) => {
@@ -53,6 +54,20 @@ setup(app).then(({ mongodb }) => {
     getTopics(mongodb).then(topics => {
       res.status(200).json(topics);
     });
+  });
+
+  app.post("/api/topic/:topicId", async (req, res) => {
+    assert(req.body.href, `need "href"`, req.body);
+    try {
+      await validateUrl(req.body.href);
+    } catch (e) {
+      console.error(e);
+      return res.status(400).send("bad-link");
+    }
+    return addTopicLink(mongodb, {
+      topicId: req.params.topicId,
+      link: req.body
+    }).then(() => res.status(200).send(), () => res.status(500).send());
   });
 
   app.use(express.static("public"));

@@ -6,7 +6,7 @@ export function assert(condition, message, errorInformation) {
 }
 
 export function update(o, key, fnOrValue) {
-  if (typeof key === "string") key = key.split(".");
+  if (typeof key === "string") key = [key];
   if (key.length === 0)
     return fnOrValue instanceof Function ? fnOrValue(o) : fnOrValue;
   const updated = update(o[key[0]], key.slice(1), fnOrValue);
@@ -23,13 +23,13 @@ export function updateAll(o, ...keyFns) {
 }
 
 export function get(o, key) {
-  if (typeof key === "string") key = key.split(".");
+  if (typeof key === "string") key = [key];
   if (key.length === 0) return o;
   return get(o[key[0]], key.slice(1));
 }
 
 export function set(o, key, value) {
-  if (typeof key === "string") key = key.split(".");
+  if (typeof key === "string") key = [key];
   if (key.length === 0) return value;
   if (o === undefined) o = {};
   return {
@@ -99,3 +99,10 @@ export function which() {
     throw new Error("case not handled");
   };
 }
+
+// const time = fn => (...args) => {
+//   const b = performance.now()
+//   const result = fn(...args)
+//   console.log('TIME', performance.now() - b)
+//   return result
+// }

@@ -1,35 +1,31 @@
 import xs from "xstream";
+import dropRepeats from "xstream/extra/dropRepeats";
 import isolate from "@cycle/isolate";
-import { button, div } from "@cycle/dom";
+import { div } from "@cycle/dom";
+import { withState } from "@cycle/state";
 
-function renderTopic(state) {
-  return div(state.topic.title);
-}
-
-function _Topic(sources) {
-  const dom$ = sources.state.stream.map(state =>
-    div([button(".back-button", "back"), renderTopic(state)])
-  );
-  const goBack$ = sources.dom
-    .select(".back-button")
-    .events("click")
-    .map(event => ({ type: "go-back", event }));
-  return {
-    dom: dom$,
-    history: goBack$
-  };
-}
+import { updateAll } from "../../utility/index";
+import _Topic from "./topic";
 
 export default function makeTopic(topicId) {
-  const Topic = isolate(_Topic, {
+  const Topic = isolate(withState(_Topic, "local"), {
     state: {
       get: state => ({
-        topic: state.topics.find(t => t.id === topicId)
-      })
+        linkRecord: state.linkRecord,
+        topic: state.topicRecord[topicId]
+      }),
+      set: (state, inner) =>
+        updateAll(
+          state,
+          [["topicRecord", topicId], inner.topic],
+          ["linkRecord", inner.linkRecord]
+        )
     }
   });
   return sources => {
-    const isLoading$ = sources.state.stream.map(state => !state.topics);
+    const isLoading$ = sources.state.stream
+      .map(state => !state.topicRecord?.[topicId])
+      .compose(dropRepeats());
     return isLoading$.map(isLoading =>
       isLoading ? { dom: xs.of(div("Loading...")) } : Topic(sources)
     );

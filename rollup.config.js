@@ -1,4 +1,5 @@
 import resolve from "@rollup/plugin-node-resolve";
+import babel from "@rollup/plugin-babel";
 import commonjs from "@rollup/plugin-commonjs";
 import json from "@rollup/plugin-json";
 import livereload from "rollup-plugin-livereload";
@@ -29,7 +30,8 @@ export default [
       commonjs(),
       json(),
       !production && livereload({ watch: "public", delay: 500 }),
-      production && terser()
+      production && babel(),
+      production && terser() // requires babel...
     ]
   }
 ];

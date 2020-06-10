@@ -33,6 +33,9 @@
     "xstream": "^11.12.0"
   },
   "devDependencies": {
+    "@babel/core": "^7.10.2",
+    "@babel/plugin-proposal-optional-chaining": "^7.10.1",
+    "@rollup/plugin-babel": "^5.0.3",
     "@rollup/plugin-commonjs": "^12.0.0",
     "@rollup/plugin-json": "^4.0.3",
     "@rollup/plugin-node-resolve": "^8.0.0",

@@ -8,10 +8,8 @@ const DEFAULT_PAGINATION = {
 export function historyDriver(navigation$) {
   let pagination = DEFAULT_PAGINATION;
 
-  let navigationListener;
-
   function handleGotoTopic({ event, topic }) {
-    if (!event.defaultPrevented) event.preventDefault();
+    if (event && !event.defaultPrevented) event.preventDefault();
     pagination = {
       ...pagination,
       hash: topic.id
@@ -19,8 +17,8 @@ export function historyDriver(navigation$) {
     window.history.pushState(pagination, topic.title, "#" + topic.id);
   }
 
-  function handleGoBack({ event }) {
-    if (!event.defaultPrevented) event.preventDefault();
+  function handleGotoTopicList({ event }) {
+    if (event && !event.defaultPrevented) event.preventDefault();
     window.history.back();
   }
 
@@ -28,32 +26,33 @@ export function historyDriver(navigation$) {
     switch (navigationEvent.type) {
       case "goto-topic":
         return handleGotoTopic(navigationEvent);
-      case "go-back":
-        return handleGoBack(navigationEvent);
+      case "goto-topic-list":
+        return handleGotoTopicList(navigationEvent);
     }
   }
 
   navigation$.addListener({
     next: handleNavigationEvent,
-    error: console.error,
-    complete: () => {}
+    error: console.error
   });
+
+  let navigationStateListener;
 
   const state$ = xs.create({
     start: listener => {
       listener.next(pagination);
-      navigationListener = {
+      navigationStateListener = {
         next: () => listener.next(pagination),
         error: console.error
       };
-      navigation$.addListener(navigationListener);
+      navigation$.addListener(navigationStateListener);
       window.addEventListener("popstate", event => {
         pagination = event.state || DEFAULT_PAGINATION;
         listener.next(pagination);
       });
     },
     stop: () => {
-      navigation$.removeListener(navigationListener);
+      navigation$.removeListener(navigationStateListener);
     }
   });
 

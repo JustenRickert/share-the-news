@@ -9,7 +9,6 @@ import { historyDriver } from "./history";
 import model from "./model";
 import AccountInfo from "./account-info";
 import makeTopicList from "./topic-list";
-import CreateNewTopic from "./create-new-topic";
 import { cond } from "../utility/index";
 
 const makeRouteCond = cond(
@@ -19,29 +18,25 @@ const makeRouteCond = cond(
 
 function main(sources) {
   const accountInfoSinks = AccountInfo(sources);
-  const createNewTopicSinks = CreateNewTopic(sources);
   const route$ = sources.history.stream
     .map(makeRouteCond)
     .map(makeRoute => makeRoute(sources))
     .flatten();
   const dom$ = xs
-    .combine(
-      accountInfoSinks.dom,
-      route$.map(s => s.dom).flatten(),
-      createNewTopicSinks.dom
-    )
-    .map(([accountInfo, route, createNewTopic]) =>
-      div([accountInfo, route, createNewTopic])
-    );
+    .combine(accountInfoSinks.dom, route$.map(s => s.dom).flatten())
+    .map(([accountInfo, route]) => div([accountInfo, route]));
   const effects = model(sources);
   return {
     dom: dom$,
-    state: xs.merge(effects.state, createNewTopicSinks.state),
+    state: xs.merge(
+      effects.state,
+      route$.map(s => s.state || xs.never()).flatten()
+    ),
     history: route$.map(s => s.history || xs.never()).flatten(),
     http: xs.merge(
       effects.http,
-      createNewTopicSinks.http,
-      accountInfoSinks.http
+      accountInfoSinks.http,
+      route$.map(s => s.http || xs.never()).flatten()
     )
   };
 }

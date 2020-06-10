@@ -5,7 +5,11 @@ export default function intent(sources) {
     .map(({ ownerTarget: { elements: { title } } }) => ({
       title: title.value.trim()
     }));
+
+  const createNewTopicResponse$ = sources.http.select("create-new-topic");
+
   return {
-    createNewTopic: createNewTopic$
+    createNewTopic: createNewTopic$,
+    createNewTopicResponse: createNewTopicResponse$
   };
 }
