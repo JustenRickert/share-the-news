@@ -3,6 +3,7 @@ import cors from "cors";
 import session from "express-session";
 import { MongoClient } from "mongodb";
 import ConnectMongo from "connect-mongo";
+import puppeteer from "puppeteer";
 
 export default function setup(app) {
   const MongoSessionStore = ConnectMongo(session);
@@ -36,11 +37,16 @@ export default function setup(app) {
   app.use(bodyParser.json());
   app.use(session(expressSessionConfig));
 
-  return mongoClientPromise.then(mongoclient => {
-    const mongodb = mongoclient.db(mongoDbName);
-    return {
-      mongoclient,
-      mongodb
-    };
-  });
+  const puppeteerBrowser = puppeteer.launch();
+
+  return Promise.all([mongoClientPromise, puppeteerBrowser]).then(
+    ([mongoclient, puppeteerBrowser]) => {
+      const mongodb = mongoclient.db(mongoDbName);
+      return {
+        mongoclient,
+        mongodb,
+        puppeteerBrowser
+      };
+    }
+  );
 }

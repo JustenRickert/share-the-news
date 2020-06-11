@@ -17,6 +17,7 @@ const makeRouteCond = cond(
 );
 
 function main(sources) {
+  sources.state.stream.addListener({ next: console.log });
   const accountInfoSinks = AccountInfo(sources);
   const route$ = sources.history.stream
     .map(makeRouteCond)

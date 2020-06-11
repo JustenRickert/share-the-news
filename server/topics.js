@@ -33,30 +33,34 @@ export function addNewTopic(db, payload) {
 
 export function addTopicLink(db, payload) {
   assert(payload.topicId, `"topicId" required`, payload);
-  assert(payload.link, `"link", required`, payload);
-  assert(
-    typeof payload.link.href === "string",
-    `link "href" required`,
-    payload.link
-  );
+  assert(typeof payload.href === "string", `"href" is href`, payload);
   return addTopicLinks(db, {
     topicId: payload.topicId,
-    links: [payload.link]
+    hrefs: [payload.href]
   });
 }
 
 export function addTopicLinks(db, payload) {
   assert(payload.topicId, `"topicId" required`, payload);
-  assert(Array.isArray(payload.links), `"links", Array, required`, payload);
+  assert(Array.isArray(payload.hrefs), `"hrefs", Array, required`, payload);
   assert(
-    payload.links.every(l => typeof l.href === "string"),
-    `links "href" required`,
-    payload.links
+    payload.hrefs.every(href => typeof href === "string"),
+    `"hrefs" are hrefs`,
+    payload
   );
-  return db
-    .collection("topics")
-    .updateOne(
-      { _id: new ObjectId(payload.topicId) },
-      { $push: { links: { $each: payload.links } } }
-    );
+  return Promise.all([
+    db
+      .collection("topics")
+      .findOneAndUpdate(
+        { _id: new ObjectId(payload.topicId) },
+        { $addToSet: { linkIds: { $each: payload.hrefs.map(href => href) } } },
+        { returnOriginal: false }
+      ),
+    db
+      .collection("links")
+      .insertMany(payload.hrefs.map(href => ({ _id: href })), {
+        ordered: false
+      })
+      .catch(() => {}) // okay if duplicates found and no insert
+  ]);
 }

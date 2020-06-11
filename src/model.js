@@ -27,25 +27,15 @@ export default function model(sources) {
       [
         "topicRecord",
         topics.reduce(
-          (r, t) => ({
-            ...r,
-            [t.id]: set(t, "linkIds", (t.links || []).map(t => t.href)) // TODO delete `|| []`
-          }),
+          (r, t) => ({ ...r, [t.id]: set(t, "linkIds", t.linkIds) }),
           {}
         )
       ],
       [
         "linkRecord",
         topics
-          .filter(t => t.links) // TODO delete this line
-          .flatMap(t => t.links)
-          .reduce(
-            (links, l) => ({
-              ...links,
-              [l.href]: l
-            }),
-            {}
-          )
+          .flatMap(t => t.linkIds)
+          .reduce((links, href) => ({ ...links, [href]: null }), {})
       ]
     )
   );

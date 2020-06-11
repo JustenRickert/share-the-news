@@ -18,6 +18,27 @@ export function update(o, key, fnOrValue) {
   };
 }
 
+export function butlast(xs) {
+  return xs.slice(0, -1);
+}
+
+function updateMergeOne(o, mergePath) {
+  if (mergePath.length === 1) return Object.assign({}, o, last(mergePath));
+  else
+    return {
+      ...o,
+      [first(mergePath)]: updateMerge(o[first(mergePath)], mergePath.slice(1))
+    };
+}
+
+export function updateMerge(o, ...mergePaths) {
+  return mergePaths.reduce((o, mergePath) => updateMergeOne(o, mergePath), o);
+}
+
+export function not(predicate) {
+  return (...args) => !predicate(...args);
+}
+
 export function updateAll(o, ...keyFns) {
   return keyFns.reduce((o, [key, fn]) => update(o, key, fn), o);
 }

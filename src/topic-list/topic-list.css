@@ -1,0 +1,25 @@
+.topic-list {
+    padding: 2px;
+    background-color: lightgray;
+    margin-block-start: 0;
+    padding-inline-start: 0;
+}
+
+.topic-list a {
+    cursor: pointer;
+}
+
+.topic-list a:hover {
+    text-decoration: underline;
+}
+
+.topic-list-item {
+    margin: 4px;
+    padding: 2px;
+    background-color: white;
+    border-radius: 2px;
+}
+
+.topic-list-item h4 {
+    margin: 0;
+}

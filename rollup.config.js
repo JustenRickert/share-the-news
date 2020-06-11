@@ -3,6 +3,7 @@ import babel from "@rollup/plugin-babel";
 import commonjs from "@rollup/plugin-commonjs";
 import json from "@rollup/plugin-json";
 import livereload from "rollup-plugin-livereload";
+import css from "rollup-plugin-css-only";
 import { terser } from "rollup-plugin-terser";
 
 const production = !process.env.ROLLUP_WATCH;
@@ -27,6 +28,7 @@ export default [
     context: "window",
     plugins: [
       resolve({ browser: true }),
+      css({ output: "public/bundle.css" }),
       commonjs(),
       json(),
       !production && livereload({ watch: "public", delay: 500 }),

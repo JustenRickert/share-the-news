@@ -2,13 +2,19 @@ import express from "express";
 
 import setup from "./setup";
 import { addNewTopic, getTopics, addTopicLink } from "./topics";
+import {
+  getLinkInformation,
+  addLinkInformation,
+  getTopicLinksInformation
+} from "./links";
 import { createNewUser, getUser, getUserById } from "./users";
 import validateUrl from "./validate-url";
+import { retrieveHeadlineFromInternet } from "./internet-stuff";
 import { assert } from "../utility/index";
 
 const app = express();
 
-setup(app).then(({ mongodb }) => {
+setup(app).then(({ mongodb, puppeteerBrowser }) => {
   app.post("/api/user/new", (req, res) => {
     createNewUser(mongodb, req.body)
       .then(({ insertedId, username }) => {
@@ -56,8 +62,40 @@ setup(app).then(({ mongodb }) => {
     });
   });
 
-  app.post("/api/topic/:topicId", async (req, res) => {
-    assert(req.body.href, `need "href"`, req.body);
+  app.get("/api/topic/links/information/:topicId", (req, res) => {
+    getTopicLinksInformation(mongodb, req.params.topicId).then(links =>
+      res.status(200).json(links)
+    );
+  });
+
+  app.get("/api/link/information/:href", async (req, res) => {
+    const link = await getLinkInformation(mongodb, req.params.href);
+    if (link.generatedHeadline) {
+      return res.status(200).json(link);
+    }
+    try {
+      const generatedHeadline = await retrieveHeadlineFromInternet(
+        puppeteerBrowser,
+        req.params.href
+      );
+      const generatedLink = await addLinkInformation(mongodb, {
+        href: req.params.href,
+        generatedHeadline
+      });
+      res.status(200).json(generatedLink);
+    } catch (error) {
+      // TODO handle 500s somehow?
+      console.error(error);
+      res.status(500).send();
+    }
+  });
+
+  app.post("/api/topic/:topicId/add-link", async (req, res) => {
+    assert(
+      typeof req.body.href === "string",
+      `"href" should be an href`,
+      req.body
+    );
     try {
       await validateUrl(req.body.href);
     } catch (e) {
@@ -66,8 +104,14 @@ setup(app).then(({ mongodb }) => {
     }
     return addTopicLink(mongodb, {
       topicId: req.params.topicId,
-      link: req.body
-    }).then(() => res.status(200).send(), () => res.status(500).send());
+      href: req.body.href
+    }).then(
+      ([topics, _links]) => res.status(200).json(topics.value.linkIds),
+      error => {
+        console.error(error);
+        res.status(500).send();
+      }
+    );
   });
 
   app.use(express.static("public"));

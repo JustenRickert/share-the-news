@@ -1,15 +1,17 @@
 import xs from "xstream";
 import sampleCombine from "xstream/extra/sampleCombine";
 import dropRepeats from "xstream/extra/dropRepeats";
-import { a, div, ul, li } from "@cycle/dom";
+import { a, div, h4, ul, li } from "@cycle/dom";
 import { makeCollection } from "@cycle/state";
 import isolate from "@cycle/isolate";
 
 import AddNewTopic from "./add-new-topic";
 
+import "./topic-list.css";
+
 function Topic(sources) {
   const dom$ = sources.state.stream.map(t =>
-    li(".topic-list-item", a(t.title))
+    li(".topic-list-item", [h4(a(t.title)), div([t.linkIds.length, " links"])])
   );
 
   const clickLink$ = sources.dom
@@ -30,7 +32,7 @@ const TopicCollection = isolate(
     itemKey: state => state.id,
     itemScope: key => key,
     collectSinks: instances => ({
-      dom: instances.pickCombine("dom").map(lis => ul(lis)),
+      dom: instances.pickCombine("dom").map(lis => ul(".topic-list", lis)),
       history: instances.pickMerge("history")
     })
   }),
