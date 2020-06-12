@@ -22,14 +22,15 @@ export function getLinkInformation(db, href) {
 }
 
 export async function getTopicLinksInformation(db, topicId) {
-  const { linkIds } = await db
+  const topic = await db
     .collection("topics")
     .findOne({ _id: new ObjectId(topicId) });
+  assert(topic.linkIds, `"topicId" should have associated "linkIds"`, topic);
   const links = await db
     .collection("links")
     .find({
       _id: {
-        $in: linkIds
+        $in: topic.linkIds
       }
     })
     .toArray()

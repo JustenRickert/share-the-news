@@ -68,6 +68,8 @@ setup(app).then(({ mongodb, puppeteerBrowser }) => {
     );
   });
 
+  app.post("/api/topic/links/comments/:topicId/:linkId", () => {});
+
   app.get("/api/link/information/:href", async (req, res) => {
     const link = await getLinkInformation(mongodb, req.params.href);
     if (link.generatedHeadline) {
@@ -116,7 +118,10 @@ setup(app).then(({ mongodb, puppeteerBrowser }) => {
 
   app.use(express.static("public"));
 
-  app.all("*", req => console.error(req.body, req.method, req.url));
+  app.all("*", (req, res) => {
+    console.error(req.body, req.method, req.url);
+    res.status(404).send();
+  });
 
   app.listen(10002, err => {
     if (err) throw err;
