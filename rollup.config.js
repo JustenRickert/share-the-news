@@ -8,6 +8,8 @@ import { terser } from "rollup-plugin-terser";
 
 const production = !process.env.ROLLUP_WATCH;
 
+const extensions = [".js", ".ts"];
+
 export default [
   {
     input: "server/index.js",
@@ -19,7 +21,7 @@ export default [
     plugins: []
   },
   {
-    input: "src/main.js",
+    input: "src/main.ts",
     output: {
       file: "public/bundle.js",
       format: "esm",
@@ -27,12 +29,16 @@ export default [
     },
     context: "window",
     plugins: [
-      resolve({ browser: true }),
+      resolve({ browser: true, extensions }),
       css({ output: "public/bundle.css" }),
       commonjs(),
       json(),
+      babel({
+        exclude: "node_modules/**",
+        include: ["src/**/*"],
+        extensions
+      }),
       !production && livereload({ watch: "public", delay: 500 }),
-      production && babel(),
       production && terser() // requires babel...
     ]
   }

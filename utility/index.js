@@ -5,16 +5,46 @@ export function assert(condition, message, errorInformation) {
   }
 }
 
-export function update(o, key, fnOrValue) {
-  if (typeof key === "string") key = [key];
+/**
+ * @template O
+ * @param {O} o
+ * @returns {O}
+ */
+export function update(o, ...pathFnOrValue) {
+  const key = butlast(pathFnOrValue);
+  const fnOrValue = last(pathFnOrValue);
   if (key.length === 0)
     return fnOrValue instanceof Function ? fnOrValue(o) : fnOrValue;
-  const updated = update(o[key[0]], key.slice(1), fnOrValue);
+  const updated = update(o[key[0]], ...key.slice(1), fnOrValue);
   if (Array.isArray(o))
     return [...o.slice(0, key[0]), updated, ...o.slice(key[0] + 1)];
   return {
     ...o,
     [key[0]]: updated
+  };
+}
+
+function updateUpduce(o, key, fnOrValue) {
+  if (!key.length)
+    return fnOrValue instanceof Function ? fnOrValue(o) : fnOrValue;
+  return {
+    ...o,
+    [key[0]]: updateUpduce(o[key[0]], key.slice(1), fnOrValue)
+  };
+}
+
+/**
+ * @template T
+ * @returns {(t: T) => T}
+ */
+export function upduce(...pathFnOrValues) {
+  return o => {
+    for (const pathFnOrValue of pathFnOrValues) {
+      const key = butlast(pathFnOrValue);
+      const fnOrValue = last(pathFnOrValue);
+      o = updateUpduce(o, key, fnOrValue);
+    }
+    return o;
   };
 }
 
@@ -103,8 +133,13 @@ export function cases(...args) {
   };
 }
 
+/**
+ * @template T
+ * @template R
+ * @param {[(...ts: T[]) => boolean, (...ts: T[]) => R][]} args
+ */
 export function cond(...args) {
-  return (...xs) => {
+  return (/** @type {T[]} */ ...xs) => {
     for (const [predicate, resultFn] of args) {
       if (predicate(...xs)) return resultFn(...xs);
     }

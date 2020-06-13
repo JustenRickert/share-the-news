@@ -6,7 +6,7 @@ export function getTopics(db) {
   return db
     .collection("topics")
     .find()
-    .sort({ createdDate: -1 })
+    .sort({ submittedDate: -1 })
     .toArray()
     .then(topics =>
       topics.map(t => {
@@ -27,7 +27,7 @@ export function addNewTopic(db, payload) {
   return db.collection("topics").insertOne({
     ...payload,
     linkIds: [],
-    createdDate: new Date()
+    submittedDate: new Date()
   });
 }
 
