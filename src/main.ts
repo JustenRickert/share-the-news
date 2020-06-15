@@ -1,13 +1,17 @@
-import xs from "xstream";
+import xs, { Stream } from "xstream";
 import dropRepeats from "xstream/extra/dropRepeats";
+import sampleCombine from "xstream/extra/sampleCombine";
+import fromEvent from "xstream/extra/fromEvent";
 import { run } from "@cycle/run";
 import { makeHTTPDriver } from "@cycle/http";
 import { makeDOMDriver, div } from "@cycle/dom";
 import { withState } from "@cycle/state";
-import { cond, set, lensPath, pipe, test, T } from "ramda";
+import { cond, set, has, lensPath, pipe, test, T, always, over } from "ramda";
 
-import { Sources, Sinks } from "./types";
-import List from "./topic-list";
+import { Navigation, Sources, Sinks, State } from "./types";
+import AddNewTopic from "./add-new-topic";
+import TopicList from "./topic-list";
+import Topic from "./topic";
 
 function Loading(_sources: Sources): Partial<Sinks> {
   return {
@@ -15,17 +19,15 @@ function Loading(_sources: Sources): Partial<Sinks> {
   };
 }
 
-function Topic(): Partial<Sinks> {
-  return {
-    dom: xs.of(div("topic"))
-  };
-}
-
 // TODO dynamic import these, probably(?)
-const route = cond<string, typeof List | typeof Topic | typeof Loading>([
-  [test(/\/$/), () => List],
-  [test(/topic\/\w+/), () => Topic],
-  [T, () => Loading]
+const route = cond<
+  string,
+  typeof TopicList | typeof Topic | typeof AddNewTopic | typeof Loading
+>([
+  [test(/\/$/), always(TopicList)],
+  [test(/topic\/\w+/), always(Topic)],
+  [test(/add-new-topic/), always(AddNewTopic)],
+  [T, always(Loading)]
 ]);
 
 function network(sources: Sources) {
@@ -38,19 +40,38 @@ function network(sources: Sources) {
   };
 }
 
+const withDerivedTopicId = (location: State["location"]): State["location"] => {
+  const result = /topic\/(\w+)/.exec(location.pathname);
+  if (!result)
+    return {
+      ...location,
+      topic: null
+    };
+  const [, topicId] = result;
+  return {
+    ...location,
+    topic: {
+      ...location.topic,
+      topicId
+    }
+  };
+};
+
 function model(response: ReturnType<typeof network>) {
   return xs.merge(
     xs.of(() => ({
-      location: {
-        pathname: window.location.pathname
-      },
+      location: withDerivedTopicId({
+        pathname: window.location.pathname,
+        topic: null
+      }),
       user: {
         loading: true,
         info: null
       },
       topics: {
         loaded: false,
-        list: null
+        record: {},
+        idList: []
       }
     })),
     response.initUser$.map(user =>
@@ -62,7 +83,47 @@ function model(response: ReturnType<typeof network>) {
   );
 }
 
-function main(sources: Sources): Sinks {
+function navigation(sources: Sources, nav$: Stream<Navigation>) {
+  const stateOnNav$ = nav$
+    .map(
+      cond([
+        [
+          has("pathname"),
+          navAction =>
+            pipe(
+              set(lensPath(["location", "pathname"]), navAction.pathname),
+              over(lensPath(["location"]), withDerivedTopicId)
+            )
+        ]
+      ])
+    )
+    .compose(sampleCombine(sources.state.stream))
+    .map(([reducer, state]) => reducer(state));
+  const navListener = {
+    next(newState: State) {
+      window.history.pushState(
+        newState.location,
+        newState.location.pathname,
+        newState.location.pathname
+      );
+    }
+  };
+  sources.state.stream.take(1).addListener(navListener); // initialize history state
+  stateOnNav$.addListener(navListener);
+  const state$ = xs.merge(
+    fromEvent<PopStateEvent>(window, "popstate").map(event =>
+      set(lensPath(["location"]), event.state)
+    ),
+    stateOnNav$.map(state => () => state)
+  );
+  return {
+    state$
+  };
+}
+
+type MainSinks = Omit<Sinks, "nav">;
+
+function main(sources: Sources): MainSinks {
   sources.state.stream.addListener({ next: console.log });
   const sinks$ = sources.state.stream
     .map(state => state.location.pathname)
@@ -71,9 +132,10 @@ function main(sources: Sources): Sinks {
     .map(Fn => Fn(sources));
   const response = network(sources);
   const state$ = model(response);
+  const nav = navigation(sources, sinks$.map(s => s.nav).flatten());
   return {
     dom: sinks$.map(s => s.dom).flatten(),
-    state: xs.merge(state$, sinks$.map(s => s.state).flatten()),
+    state: xs.merge(state$, sinks$.map(s => s.state).flatten(), nav.state$),
     http: xs.merge(
       xs.of({
         url: "/api/user/information",
@@ -84,7 +146,7 @@ function main(sources: Sources): Sinks {
   };
 }
 
-run(withState<Sources, Sinks>(main, "state"), {
+run(withState<Sources, MainSinks>(main, "state"), {
   dom: makeDOMDriver("#app"),
   http: makeHTTPDriver()
 });

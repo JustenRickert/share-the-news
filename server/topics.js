@@ -2,6 +2,13 @@ import { ObjectId } from "mongodb";
 
 import { assert } from "../utility/index";
 
+export function getTopic(db, topicId) {
+  return db
+    .collection("topics")
+    .findOne({ _id: new ObjectId(topicId) })
+    .then(({ _id: id, ...topic }) => ({ id, ...topic }));
+}
+
 export function getTopics(db) {
   return db
     .collection("topics")

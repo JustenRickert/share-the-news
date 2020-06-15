@@ -1,7 +1,7 @@
 import express from "express";
 
 import setup from "./setup";
-import { addNewTopic, getTopics, addTopicLink } from "./topics";
+import { addNewTopic, getTopic, getTopics, addTopicLink } from "./topics";
 import {
   getLinkInformation,
   addLinkInformation,
@@ -54,6 +54,12 @@ setup(app).then(({ mongodb, puppeteerBrowser }) => {
     }).then(({ insertedId }) => {
       res.status(200).send(insertedId);
     });
+  });
+
+  app.get("/api/topic/:topicId", (req, res) => {
+    getTopic(mongodb, req.params.topicId).then(topic =>
+      res.status(200).send(topic)
+    );
   });
 
   app.get("/api/topics", (_req, res) => {
@@ -119,7 +125,8 @@ setup(app).then(({ mongodb, puppeteerBrowser }) => {
   app.use(express.static("public"));
 
   app.all("*", (req, res) => {
-    console.error(req.body, req.method, req.url);
+    if (req.accepts("text/html"))
+      return res.status(200).sendFile("index.html", { root: "public" });
     res.status(404).send();
   });
 
