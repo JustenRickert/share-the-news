@@ -59,7 +59,7 @@ const withDerivedTopicId = (location: State["location"]): State["location"] => {
 
 function model(response: ReturnType<typeof network>) {
   return xs.merge(
-    xs.of(() => ({
+    xs.of<() => State>(() => ({
       location: withDerivedTopicId({
         pathname: window.location.pathname,
         topic: null
@@ -67,6 +67,9 @@ function model(response: ReturnType<typeof network>) {
       user: {
         loading: true,
         info: null
+      },
+      links: {
+        record: {}
       },
       topics: {
         loaded: false,

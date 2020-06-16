@@ -1,5 +1,5 @@
 import { Stream } from "xstream";
-import { DOMSource, VNode, MainDOMSource } from "@cycle/dom";
+import { VNode, MainDOMSource } from "@cycle/dom";
 import { StateSource } from "@cycle/state";
 import { HTTPSource, RequestOptions } from "@cycle/http";
 
@@ -9,6 +9,10 @@ export interface Topic {
   submittedDate: string;
   submittedBy: string;
   title: string;
+}
+
+export interface Link {
+  id: string;
 }
 
 export interface State {
@@ -21,6 +25,9 @@ export interface State {
   user: {
     loading: boolean;
     info: null | { username: string };
+  };
+  links: {
+    record: Record<string, Link>;
   };
   topics: {
     loaded: boolean;
@@ -39,9 +46,9 @@ export interface Navigation {
   pathname: string;
 }
 
-export interface Sinks {
+export interface Sinks<S = State> {
   nav: Stream<Navigation>;
   dom: Stream<VNode>;
-  state: Stream<(state: State) => State>;
+  state: Stream<(state: S) => S>;
   http: Stream<RequestOptions>;
 }

@@ -1,0 +1,15 @@
+// This file isn't used for any good reason, since this repo is compiling with
+// Babel. This repo is using TypeScript for its ability to power editor
+// features, and editors might require this file. Babel does a great job at
+// transpiling, and we don't need TypeScript for its ability to transpile.
+{
+  "compilerOptions": {
+    "target": "es5",
+    "module": "commonjs",
+    "strict": false,
+
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
+  }
+}

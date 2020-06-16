@@ -74,7 +74,7 @@ setup(app).then(({ mongodb, puppeteerBrowser }) => {
     );
   });
 
-  app.post("/api/topic/links/comments/:topicId/:linkId", () => {});
+  // app.post("/api/topic/links/comments/:topicId/:linkId", () => {});
 
   app.get("/api/link/information/:href", async (req, res) => {
     const link = await getLinkInformation(mongodb, req.params.href);
@@ -99,6 +99,7 @@ setup(app).then(({ mongodb, puppeteerBrowser }) => {
   });
 
   app.post("/api/topic/:topicId/add-link", async (req, res) => {
+    console.log("???");
     assert(
       typeof req.body.href === "string",
       `"href" should be an href`,
@@ -114,9 +115,11 @@ setup(app).then(({ mongodb, puppeteerBrowser }) => {
       topicId: req.params.topicId,
       href: req.body.href
     }).then(
-      ([topics, _links]) => res.status(200).json(topics.value.linkIds),
+      insertedLinkIds => res.status(200).json(insertedLinkIds),
       error => {
         console.error(error);
+        if (error.name === "BulkWriteError")
+          return res.status(400).send("duplicate-link");
         res.status(500).send();
       }
     );

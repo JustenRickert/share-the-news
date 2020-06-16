@@ -2,6 +2,8 @@ import { ObjectId } from "mongodb";
 
 import { assert } from "../utility/index";
 
+import { toLink } from "./links";
+
 export function getTopic(db, topicId) {
   return db
     .collection("topics")
@@ -61,7 +63,7 @@ export function addTopicLink(db, payload) {
   });
 }
 
-export function addTopicLinks(db, payload) {
+export async function addTopicLinks(db, payload) {
   assert(payload.topicId, `"topicId" required`, payload);
   assert(Array.isArray(payload.hrefs), `"hrefs", Array, required`, payload);
   assert(
@@ -69,19 +71,18 @@ export function addTopicLinks(db, payload) {
     `"hrefs" are hrefs`,
     payload
   );
-  return Promise.all([
-    db
-      .collection("topics")
-      .findOneAndUpdate(
-        { _id: new ObjectId(payload.topicId) },
-        { $addToSet: { linkIds: { $each: payload.hrefs.map(href => href) } } },
-        { returnOriginal: false }
-      ),
-    db
-      .collection("links")
-      .insertMany(payload.hrefs.map(href => ({ _id: href })), {
-        ordered: false
-      })
-      .catch(() => {}) // okay if duplicates found and no insert
-  ]);
+  await db
+    .collection("links")
+    .insertMany(payload.hrefs.map(href => ({ _id: href })), {
+      ordered: false
+    })
+    .catch(() => {}); // OKAY!
+  await db
+    .collection("topics")
+    .findOneAndUpdate(
+      { _id: new ObjectId(payload.topicId) },
+      { $addToSet: { linkIds: { $each: payload.hrefs } } },
+      { returnOriginal: false }
+    );
+  return payload.hrefs.map(href => ({ id: href }));
 }
